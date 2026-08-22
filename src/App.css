@@ -117,6 +117,13 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(76, 9, 88, 0.12);
 }
 
+.readonly-field {
+  background: var(--purple-light);
+  color: var(--purple);
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
 textarea {
   resize: vertical;
   min-height: 52px;
@@ -262,6 +269,34 @@ textarea {
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-generate {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  margin-top: 4px;
+  margin-bottom: 20px;
+}
+
+.hint {
+  font-size: 0.82rem;
+  color: var(--slate);
+  margin: 4px 0 0;
+}
+
+.hint.center {
+  text-align: center;
+}
+
+.records-card .hint {
+  margin: 4px 0 10px;
+}
+
+.btn-export {
+  width: 100%;
+  background: var(--purple-dark);
+  margin-bottom: 6px;
 }
 
 /* --- Invoice sheet (visual replica of the letterhead) --- */

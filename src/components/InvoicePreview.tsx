@@ -3,7 +3,6 @@ import { LOGO_BASE64 } from "../assets/logo";
 import { SIGNATURE_BASE64 } from "../assets/signature";
 import { amountInWords, calcLineAmount, calcTotal } from "../types";
 import type { InvoiceData } from "../types";
-import { downloadInvoicePdf } from "../utils/generateInvoicePdf";
 import { generateUpiQrDataUrl } from "../utils/qrCode";
 import {
   BUSINESS_NAME,
@@ -32,7 +31,6 @@ export default function InvoicePreview({ data }: Props) {
   const total = calcTotal(items);
   const totalStr = total.toFixed(0);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,22 +47,10 @@ export default function InvoicePreview({ data }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalStr, bill.billTo]);
 
-  const handleDownload = async () => {
-    setDownloading(true);
-    try {
-      await downloadInvoicePdf(data);
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <section className="card preview">
       <div className="preview-toolbar">
         <h2>Invoice Preview</h2>
-        <button type="button" className="btn" onClick={handleDownload} disabled={downloading}>
-          {downloading ? "Generating…" : "Download PDF"}
-        </button>
       </div>
 
       <div className="invoice-sheet">
