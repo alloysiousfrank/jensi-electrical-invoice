@@ -1,56 +1,34 @@
 import * as XLSX from "xlsx";
+import { apiGet, apiPost } from "./api";
 import { calcLineAmount, calcTotal } from "../types";
-import type { InvoiceData } from "../types";
+import type { InvoiceData, BillDetails, LineItem } from "../types";
 
-const STORAGE_KEY = "jew_invoice_records";
-
-export interface InvoiceRecord {
-  savedAt: string; // ISO timestamp of when it was generated
+export interface InvoiceApiRecord {
+  _id: string;
   invoiceNumber: string;
-  billTo: string;
-  address: string;
-  date: string;
-  mobileNo: string;
-  itemCount: number;
-  total: string;
-  items: { description: string; qty: string; rate: string; amount: string }[];
+  bill: BillDetails;
+  items: LineItem[];
+  createdAt: string;
 }
 
-function toRecord(data: InvoiceData): InvoiceRecord {
-  const total = calcTotal(data.items);
+/** Creates the invoice on the shared backend. Invoice number is assigned server-side. */
+export async function createInvoice(data: InvoiceData): Promise<InvoiceApiRecord> {
+  return apiPost<InvoiceApiRecord>("/api/invoices", {
+    bill: data.bill,
+    items: data.items,
+  });
+}
+
+/** Fetches every invoice from every device — this is the shared list. */
+export async function fetchAllInvoices(): Promise<InvoiceApiRecord[]> {
+  return apiGet<InvoiceApiRecord[]>("/api/invoices");
+}
+
+export function toInvoiceData(record: InvoiceApiRecord): InvoiceData {
   return {
-    savedAt: new Date().toISOString(),
-    invoiceNumber: data.bill.billNo,
-    billTo: data.bill.billTo,
-    address: data.bill.address,
-    date: data.bill.date,
-    mobileNo: data.bill.mobileNo,
-    itemCount: data.items.length,
-    total: total.toFixed(0),
-    items: data.items.map((item) => ({
-      description: item.description,
-      qty: item.qty.trim() || "-",
-      rate: (parseFloat(item.rate || "0") || 0).toFixed(0),
-      amount: calcLineAmount(item).toFixed(0),
-    })),
+    bill: { ...record.bill, billNo: record.invoiceNumber },
+    items: record.items,
   };
-}
-
-export function getAllRecords(): InvoiceRecord[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveInvoiceRecord(data: InvoiceData): void {
-  const records = getAllRecords();
-  records.push(toRecord(data));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
 
 function formatDateForSheet(iso: string): string {
@@ -61,26 +39,27 @@ function formatDateForSheet(iso: string): string {
 }
 
 /**
- * Exports every saved invoice as an .xlsx workbook with two sheets:
- * - "Invoices": one row per invoice (quick overview).
- * - "Line Items": one row per item across every invoice (full itemized detail).
+ * Exports every shared invoice as a downloadable .xlsx workbook with two
+ * sheets: "Invoices" (one row per invoice — quick overview) and
+ * "Line Items" (one row per service across every invoice — full itemized
+ * detail for bookkeeping).
  */
-export function exportRecordsToExcel(): void {
-  const records = getAllRecords();
+export async function exportRecordsToExcel(): Promise<void> {
+  const records = await fetchAllInvoices();
   if (records.length === 0) {
-    alert("No invoices saved yet — generate an invoice first.");
+    alert("No invoice records saved yet.");
     return;
   }
 
   const invoiceRows = records.map((r) => ({
     "Invoice No.": r.invoiceNumber,
-    Date: formatDateForSheet(r.date),
-    "Bill To": r.billTo,
-    Address: r.address,
-    "Mobile No.": r.mobileNo,
-    "Item Count": r.itemCount,
-    "Total Amount (Rs.)": r.total,
-    "Saved At": new Date(r.savedAt).toLocaleString("en-IN"),
+    Date: formatDateForSheet(r.bill.date),
+    "Bill To": r.bill.billTo,
+    Address: r.bill.address,
+    "Mobile No.": r.bill.mobileNo,
+    "Item Count": r.items.length,
+    "Total Amount (Rs.)": calcTotal(r.items).toFixed(0),
+    "Saved At": new Date(r.createdAt).toLocaleString("en-IN"),
   }));
 
   const lineItemRows: Record<string, string | number>[] = [];
@@ -88,13 +67,13 @@ export function exportRecordsToExcel(): void {
     r.items.forEach((item, idx) => {
       lineItemRows.push({
         "Invoice No.": r.invoiceNumber,
-        Date: formatDateForSheet(r.date),
-        "Bill To": r.billTo,
+        Date: formatDateForSheet(r.bill.date),
+        "Bill To": r.bill.billTo,
         "S.No.": idx + 1,
         Description: item.description,
-        Qty: item.qty,
-        "Rate (Rs.)": item.rate,
-        "Amount (Rs.)": item.amount,
+        Qty: item.qty.trim() || "-",
+        "Rate (Rs.)": (parseFloat(item.rate || "0") || 0).toFixed(0),
+        "Amount (Rs.)": calcLineAmount(item).toFixed(0),
       });
     });
   }

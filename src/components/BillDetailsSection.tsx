@@ -23,7 +23,14 @@ export default function BillDetailsSection({ bill, onChange }: Props) {
         </div>
         <div className="field">
           <label htmlFor="billNo">Bill No.</label>
-          <input id="billNo" value={bill.billNo} readOnly className="readonly-field" title="Auto-generated when you click Generate Invoice" />
+          <input
+            id="billNo"
+            value={bill.billNo}
+            readOnly
+            className="readonly-field"
+            placeholder="Assigned when generated"
+            title="Assigned automatically by the shared server when you click Generate Invoice"
+          />
         </div>
         <div className="field">
           <label htmlFor="date">Date</label>

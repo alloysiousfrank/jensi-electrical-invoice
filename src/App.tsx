@@ -1,40 +1,74 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import PasswordGate from "./components/PasswordGate";
 import BillDetailsSection from "./components/BillDetailsSection";
 import LineItemsSection from "./components/LineItemsSection";
 import InvoicePreview from "./components/InvoicePreview";
+import InvoiceRecordsList from "./components/InvoiceRecordsList";
 import { emptyBillDetails, defaultLineItems } from "./types";
 import type { BillDetails, LineItem } from "./types";
 import { BUSINESS_NAME } from "./config/businessConfig";
 import { downloadInvoicePdf } from "./utils/generateInvoicePdf";
-import { generateInvoiceNumber, peekNextInvoiceNumber } from "./utils/invoiceNumber";
-import { saveInvoiceRecord, exportRecordsToExcel, getAllRecords } from "./utils/invoiceStore";
+import { createInvoice, fetchAllInvoices, exportRecordsToExcel, toInvoiceData } from "./utils/invoiceStore";
+import type { InvoiceApiRecord } from "./utils/invoiceStore";
 
-export default function App() {
-  const [bill, setBill] = useState<BillDetails>(() => ({ ...emptyBillDetails, billNo: peekNextInvoiceNumber() }));
+function InvoiceApp() {
+  const [bill, setBill] = useState<BillDetails>(emptyBillDetails);
   const [items, setItems] = useState<LineItem[]>(defaultLineItems);
   const [generating, setGenerating] = useState(false);
-  const [recordCount, setRecordCount] = useState(() => getAllRecords().length);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const canGenerate = bill.billTo.trim() !== "" && items.some((it) => it.description.trim() !== "");
+  const [records, setRecords] = useState<InvoiceApiRecord[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState<string | null>(null);
+
+  const loadRecords = useCallback(async () => {
+    setListLoading(true);
+    setListError(null);
+    try {
+      const data = await fetchAllInvoices();
+      setRecords(data);
+    } catch (err) {
+      setListError(err instanceof Error ? err.message : "Failed to load invoices.");
+    } finally {
+      setListLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
+
+  const canGenerate = bill.billTo.trim() !== "" && items.some((it) => it.description.trim() !== "") && !generating;
 
   const handleGenerate = async () => {
-    if (!canGenerate || generating) return;
+    if (!canGenerate) return;
     setGenerating(true);
+    setGenerateError(null);
     try {
-      const invoiceNumber = generateInvoiceNumber();
-      const finalBill: BillDetails = { ...bill, billNo: invoiceNumber };
-      const data = { bill: finalBill, items };
-
-      saveInvoiceRecord(data);
-      setRecordCount(getAllRecords().length);
+      const record = await createInvoice({ bill, items });
+      const data = toInvoiceData(record);
+      setRecords((prev) => [record, ...prev]);
       await downloadInvoicePdf(data);
 
-      // Reset the form for the next customer, with the next invoice number
-      // already queued up and ready to go.
-      setBill({ ...emptyBillDetails, billNo: peekNextInvoiceNumber() });
+      // Reset the form for the next customer.
+      setBill(emptyBillDetails);
       setItems(defaultLineItems());
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : "Failed to generate invoice.");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportRecordsToExcel();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to export invoices.");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -50,26 +84,23 @@ export default function App() {
           <BillDetailsSection bill={bill} onChange={setBill} />
           <LineItemsSection items={items} onChange={setItems} />
 
-          <button type="button" className="btn btn-generate" disabled={!canGenerate || generating} onClick={handleGenerate}>
+          <button type="button" className="btn btn-generate" disabled={!canGenerate} onClick={handleGenerate}>
             {generating ? "Generating…" : "Generate Invoice"}
           </button>
-          {!canGenerate && (
+          {!canGenerate && !generating && (
             <p className="hint center">Enter who the bill is for and at least one service to generate.</p>
           )}
+          {generateError && <p className="gate-error center">{generateError}</p>}
+
+          <InvoiceRecordsList records={records} loading={listLoading} error={listError} />
 
           <section className="card records-card">
-            <h2>Invoice Records</h2>
-            <p className="hint">
-              {recordCount === 0
-                ? "No invoices saved on this device yet."
-                : `${recordCount} invoice${recordCount === 1 ? "" : "s"} saved on this device.`}
-            </p>
-            <button type="button" className="btn btn-export" onClick={exportRecordsToExcel}>
-              Export All to Excel
+            <button type="button" className="btn btn-export" onClick={handleExport} disabled={exporting}>
+              {exporting ? "Exporting…" : "Export All to Excel"}
             </button>
             <p className="hint">
-              Records are stored in this browser only — export includes an invoice summary sheet plus a
-              fully itemized line-items sheet.
+              Every generated invoice is saved to the shared record book — visible from any device
+              — and can be exported as an .xlsx file any time.
             </p>
           </section>
         </div>
@@ -79,9 +110,16 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Jensi Electrical Works — Electrical, Plumbing and Company AMC</p>
+        <p>Invoices are stored securely on the shared server. PDFs are generated and downloaded only — never emailed automatically.</p>
       </footer>
     </div>
   );
 }
 
+export default function App() {
+  return (
+    <PasswordGate>
+      <InvoiceApp />
+    </PasswordGate>
+  );
+}

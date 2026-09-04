@@ -299,6 +299,116 @@ textarea {
   margin-bottom: 6px;
 }
 
+/* --- Password gate --- */
+.gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #f1e9f2;
+}
+
+.gate-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(76, 9, 88, 0.08);
+}
+
+.gate-card h1 {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+  color: var(--purple);
+}
+
+.gate-card p {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: var(--slate);
+}
+
+.gate-card input {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.gate-error {
+  color: #a13d3d;
+  font-size: 0.8rem;
+  margin: -4px 0 10px;
+}
+
+.gate-error.center {
+  text-align: center;
+}
+
+/* --- Shared invoice records list --- */
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.record-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+}
+
+.record-number {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--purple-dark);
+  letter-spacing: 0.03em;
+}
+
+.record-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.record-phone {
+  font-size: 0.8rem;
+  color: var(--slate);
+}
+
+.record-amount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.btn-row-download {
+  background: var(--ink);
+  color: #fff;
+  padding: 9px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.btn-row-download:hover:not(:disabled) {
+  background: #40203c;
+}
+
 /* --- Invoice sheet (visual replica of the letterhead) --- */
 .invoice-sheet {
   background: #ede3ee;
