@@ -5,12 +5,14 @@ const CounterSchema = new mongoose.Schema({
   seq: { type: Number, default: 0 },
 });
 
-const Counter = mongoose.model("Counter", CounterSchema);
+// Explicit collection name so this can never collide with another
+// project's counters even if they end up sharing the same database.
+const Counter = mongoose.model("Counter", CounterSchema, "jensi_counters");
 
 /** Atomically increments and returns the next invoice number, e.g. "JEW-0001". */
 async function nextInvoiceNumber() {
   const counter = await Counter.findOneAndUpdate(
-    { name: "invoice" },
+    { name: "jensi_invoice" },
     { $inc: { seq: 1 } },
     { upsert: true, new: true }
   );
