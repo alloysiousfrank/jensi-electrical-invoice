@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { apiGet, apiPost } from "./api";
-import { calcLineAmount, calcTotal } from "../types";
+import { calcLineAmount, calcTotal, emptyBillDetails, defaultLineItems } from "../types";
 import type { InvoiceData, BillDetails, LineItem } from "../types";
 
 export interface InvoiceApiRecord {
@@ -26,8 +26,8 @@ export async function fetchAllInvoices(): Promise<InvoiceApiRecord[]> {
 
 export function toInvoiceData(record: InvoiceApiRecord): InvoiceData {
   return {
-    bill: { ...record.bill, billNo: record.invoiceNumber },
-    items: record.items,
+    bill: { ...emptyBillDetails, ...record.bill, billNo: record.invoiceNumber },
+    items: record.items && record.items.length > 0 ? record.items : defaultLineItems(),
   };
 }
 
@@ -52,26 +52,26 @@ export async function exportRecordsToExcel(): Promise<void> {
   }
 
   const invoiceRows = records.map((r) => ({
-    "Invoice No.": r.invoiceNumber,
-    Date: formatDateForSheet(r.bill.date),
-    "Bill To": r.bill.billTo,
-    Address: r.bill.address,
-    "Mobile No.": r.bill.mobileNo,
-    "Item Count": r.items.length,
-    "Total Amount (Rs.)": calcTotal(r.items).toFixed(0),
-    "Saved At": new Date(r.createdAt).toLocaleString("en-IN"),
+    "Invoice No.": r.invoiceNumber || "",
+    Date: formatDateForSheet(r.bill?.date || ""),
+    "Bill To": r.bill?.billTo || "",
+    Address: r.bill?.address || "",
+    "Mobile No.": r.bill?.mobileNo || "",
+    "Item Count": (r.items || []).length,
+    "Total Amount (Rs.)": calcTotal(r.items || []).toFixed(0),
+    "Saved At": r.createdAt ? new Date(r.createdAt).toLocaleString("en-IN") : "",
   }));
 
   const lineItemRows: Record<string, string | number>[] = [];
   for (const r of records) {
-    r.items.forEach((item, idx) => {
+    (r.items || []).forEach((item, idx) => {
       lineItemRows.push({
-        "Invoice No.": r.invoiceNumber,
-        Date: formatDateForSheet(r.bill.date),
-        "Bill To": r.bill.billTo,
+        "Invoice No.": r.invoiceNumber || "",
+        Date: formatDateForSheet(r.bill?.date || ""),
+        "Bill To": r.bill?.billTo || "",
         "S.No.": idx + 1,
-        Description: item.description,
-        Qty: item.qty.trim() || "-",
+        Description: item.description || "",
+        Qty: (item.qty || "").trim() || "-",
         "Rate (Rs.)": (parseFloat(item.rate || "0") || 0).toFixed(0),
         "Amount (Rs.)": calcLineAmount(item).toFixed(0),
       });

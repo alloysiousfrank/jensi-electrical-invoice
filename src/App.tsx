@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import ErrorBoundary from "./components/ErrorBoundary";
 import PasswordGate from "./components/PasswordGate";
 import BillDetailsSection from "./components/BillDetailsSection";
 import LineItemsSection from "./components/LineItemsSection";
@@ -118,8 +119,10 @@ function InvoiceApp() {
 
 export default function App() {
   return (
-    <PasswordGate>
-      <InvoiceApp />
-    </PasswordGate>
+    <ErrorBoundary>
+      <PasswordGate>
+        <InvoiceApp />
+      </PasswordGate>
+    </ErrorBoundary>
   );
 }

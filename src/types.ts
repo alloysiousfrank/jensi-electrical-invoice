@@ -35,15 +35,15 @@ export function defaultLineItems(): LineItem[] {
 /** Amount for a single row: qty × rate when a qty is given, otherwise just the rate (flat-rate item). */
 export function calcLineAmount(item: LineItem): number {
   const rate = parseFloat(item.rate || "0") || 0;
-  const qtyTrimmed = item.qty.trim();
+  const qtyTrimmed = (item.qty || "").trim();
   if (qtyTrimmed === "" || qtyTrimmed === "-" || qtyTrimmed === "–") return rate;
   const qty = parseFloat(qtyTrimmed);
   if (Number.isNaN(qty)) return rate;
   return qty * rate;
 }
 
-export function calcTotal(items: LineItem[]): number {
-  return items.reduce((sum, item) => sum + calcLineAmount(item), 0);
+export function calcTotal(items: LineItem[] | undefined | null): number {
+  return (items || []).reduce((sum, item) => sum + calcLineAmount(item), 0);
 }
 
 const ONES = [

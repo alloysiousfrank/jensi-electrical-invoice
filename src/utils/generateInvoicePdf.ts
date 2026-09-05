@@ -130,7 +130,7 @@ export async function buildInvoicePdf(data: InvoiceData): Promise<jsPDF> {
   const rows = items.map((item, idx) => [
     `${idx + 1}.`,
     item.description || "—",
-    item.qty.trim() || "\u2013",
+    (item.qty || "").trim() || "\u2013",
     (parseFloat(item.rate || "0") || 0).toLocaleString("en-IN"),
     calcLineAmount(item).toLocaleString("en-IN"),
   ]);

@@ -17,6 +17,8 @@ export default function InvoiceRecordsList({ records, loading, error }: Props) {
     setDownloadingId(record._id);
     try {
       await downloadInvoicePdf(toInvoiceData(record));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to generate that PDF.");
     } finally {
       setDownloadingId(null);
     }
@@ -37,10 +39,10 @@ export default function InvoiceRecordsList({ records, loading, error }: Props) {
           {records.map((r) => (
             <div className="record-row" key={r._id}>
               <div className="record-main">
-                <span className="record-number">{r.invoiceNumber}</span>
-                <span className="record-name">{r.bill.billTo || "—"}</span>
-                <span className="record-phone">{r.bill.mobileNo || "—"}</span>
-                <span className="record-amount">Rs. {calcTotal(r.items).toLocaleString("en-IN")}</span>
+                <span className="record-number">{r.invoiceNumber || "—"}</span>
+                <span className="record-name">{r.bill?.billTo || "—"}</span>
+                <span className="record-phone">{r.bill?.mobileNo || "—"}</span>
+                <span className="record-amount">Rs. {calcTotal(r.items || []).toLocaleString("en-IN")}</span>
               </div>
               <button
                 type="button"

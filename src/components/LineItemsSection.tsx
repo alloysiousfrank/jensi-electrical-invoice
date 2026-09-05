@@ -37,20 +37,20 @@ export default function LineItemsSection({ items, onChange }: Props) {
             <span className="col-sno">{idx + 1}.</span>
             <input
               className="col-desc"
-              value={item.description}
+              value={item.description || ""}
               onChange={(e) => updateItem(item.id, "description", e.target.value)}
               placeholder="e.g. Ceiling Fan Fixed"
             />
             <input
               className="col-qty"
-              value={item.qty}
+              value={item.qty || ""}
               onChange={(e) => updateItem(item.id, "qty", e.target.value)}
               placeholder="1"
               inputMode="decimal"
             />
             <input
               className="col-rate"
-              value={item.rate}
+              value={item.rate || ""}
               onChange={(e) => updateItem(item.id, "rate", e.target.value)}
               placeholder="0"
               inputMode="decimal"

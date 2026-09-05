@@ -123,7 +123,7 @@ export default function InvoicePreview({ data }: Props) {
                   <tr key={item.id}>
                     <td className="col-sno">{idx + 1}.</td>
                     <td className="col-desc">{item.description || "—"}</td>
-                    <td className="col-qty">{item.qty.trim() || "–"}</td>
+                    <td className="col-qty">{(item.qty || "").trim() || "–"}</td>
                     <td className="col-rate">{(parseFloat(item.rate || "0") || 0).toLocaleString("en-IN")}</td>
                     <td className="col-amount">{calcLineAmount(item).toLocaleString("en-IN")}</td>
                   </tr>
