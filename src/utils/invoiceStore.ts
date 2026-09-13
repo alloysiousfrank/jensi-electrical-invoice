@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { apiGet, apiPost } from "./api";
+import { apiGet, apiPost, apiPut, apiDelete } from "./api";
 import { calcAdvance, calcBalanceDue, calcLineAmount, calcTotal, emptyBillDetails, defaultLineItems } from "../types";
 import type { InvoiceData, BillDetails, LineItem } from "../types";
 
@@ -19,15 +19,33 @@ export async function createInvoice(data: InvoiceData): Promise<InvoiceApiRecord
   });
 }
 
+/** Edits an existing invoice in place. The invoice number never changes. */
+export async function updateInvoice(id: string, data: InvoiceData): Promise<InvoiceApiRecord> {
+  return apiPut<InvoiceApiRecord>(`/api/invoices/${id}`, {
+    bill: data.bill,
+    items: data.items,
+  });
+}
+
 /** Fetches every invoice from every device — this is the shared list. */
 export async function fetchAllInvoices(): Promise<InvoiceApiRecord[]> {
   return apiGet<InvoiceApiRecord[]>("/api/invoices");
 }
 
+/** Permanently deletes the invoice — from the shared database, not just this device. */
+export async function deleteInvoice(id: string): Promise<void> {
+  await apiDelete<{ ok: boolean }>(`/api/invoices/${id}`);
+}
+
 export function toInvoiceData(record: InvoiceApiRecord): InvoiceData {
+  const items = record.items && record.items.length > 0 ? record.items : defaultLineItems();
   return {
     bill: { ...emptyBillDetails, ...record.bill, billNo: record.invoiceNumber },
-    items: record.items && record.items.length > 0 ? record.items : defaultLineItems(),
+    // Server-stored items have no client-side id (only description/qty/rate),
+    // but the editable line-items list needs a stable unique id per row for
+    // React keys and for targeting the right row on update/remove — assign
+    // one here if it's missing instead of leaving every row's id undefined.
+    items: items.map((item, idx) => ({ ...item, id: item.id || `edit-${record._id}-${idx}` })),
   };
 }
 

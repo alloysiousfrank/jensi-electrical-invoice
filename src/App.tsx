@@ -9,7 +9,7 @@ import { emptyBillDetails, defaultLineItems } from "./types";
 import type { BillDetails, LineItem } from "./types";
 import { BUSINESS_NAME } from "./config/businessConfig";
 import { downloadInvoicePdf } from "./utils/generateInvoicePdf";
-import { createInvoice, fetchAllInvoices, exportRecordsToExcel, toInvoiceData } from "./utils/invoiceStore";
+import { createInvoice, updateInvoice, fetchAllInvoices, exportRecordsToExcel, toInvoiceData } from "./utils/invoiceStore";
 import type { InvoiceApiRecord } from "./utils/invoiceStore";
 
 function InvoiceApp() {
@@ -18,6 +18,7 @@ function InvoiceApp() {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [records, setRecords] = useState<InvoiceApiRecord[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -47,18 +48,46 @@ function InvoiceApp() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const record = await createInvoice({ bill, items });
+      const record = editingId ? await updateInvoice(editingId, { bill, items }) : await createInvoice({ bill, items });
       const data = toInvoiceData(record);
-      setRecords((prev) => [record, ...prev]);
+      setRecords((prev) => (editingId ? prev.map((r) => (r._id === record._id ? record : r)) : [record, ...prev]));
       await downloadInvoicePdf(data);
 
       // Reset the form for the next customer.
       setBill(emptyBillDetails);
       setItems(defaultLineItems());
+      setEditingId(null);
     } catch (err) {
-      setGenerateError(err instanceof Error ? err.message : "Failed to generate invoice.");
+      setGenerateError(err instanceof Error ? err.message : "Failed to save invoice.");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleEdit = (record: InvoiceApiRecord) => {
+    const data = toInvoiceData(record);
+    setBill(data.bill);
+    setItems(data.items);
+    setEditingId(record._id);
+    setGenerateError(null);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setBill(emptyBillDetails);
+    setItems(defaultLineItems());
+    setGenerateError(null);
+  };
+
+  const handleDeleted = (id: string) => {
+    setRecords((prev) => prev.filter((r) => r._id !== id));
+    // If the deleted invoice was the one currently open for editing, back
+    // out of edit mode instead of leaving the form pointed at nothing.
+    if (editingId === id) {
+      handleCancelEdit();
     }
   };
 
@@ -82,18 +111,37 @@ function InvoiceApp() {
 
       <main className="app-main">
         <div className="form-column">
+          {editingId && (
+            <div className="editing-banner">
+              Editing an existing invoice — its invoice number won't change.
+            </div>
+          )}
           <BillDetailsSection bill={bill} onChange={setBill} />
           <LineItemsSection items={items} onChange={setItems} advanceAmount={bill.advanceAmount} />
 
-          <button type="button" className="btn btn-generate" disabled={!canGenerate} onClick={handleGenerate}>
-            {generating ? "Generating…" : "Generate Invoice"}
-          </button>
+          <div className="generate-row">
+            <button type="button" className="btn btn-generate" disabled={!canGenerate} onClick={handleGenerate}>
+              {generating ? (editingId ? "Saving…" : "Generating…") : editingId ? "Save Changes" : "Generate Invoice"}
+            </button>
+            {editingId && (
+              <button type="button" className="btn btn-cancel-edit" onClick={handleCancelEdit} disabled={generating}>
+                Cancel Edit
+              </button>
+            )}
+          </div>
           {!canGenerate && !generating && (
             <p className="hint center">Enter who the bill is for and at least one service to generate.</p>
           )}
           {generateError && <p className="gate-error center">{generateError}</p>}
 
-          <InvoiceRecordsList records={records} loading={listLoading} error={listError} />
+          <InvoiceRecordsList
+            records={records}
+            loading={listLoading}
+            error={listError}
+            onEdit={handleEdit}
+            onDeleted={handleDeleted}
+            editingId={editingId}
+          />
 
           <section className="card records-card">
             <button type="button" className="btn btn-export" onClick={handleExport} disabled={exporting}>
