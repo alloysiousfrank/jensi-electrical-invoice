@@ -89,6 +89,34 @@ body {
   grid-column: 1 / -1;
 }
 
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.pick-contact-btn {
+  position: absolute;
+  right: 4px;
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  color: var(--slate);
+}
+
+.pick-contact-btn:hover {
+  background: var(--panel);
+}
+
 label {
   font-size: 0.78rem;
   font-weight: 700;
