@@ -1,12 +1,13 @@
-import { calcLineAmount, calcTotal, newLineItem } from "../types";
+import { calcAdvance, calcBalanceDue, calcLineAmount, calcTotal, newLineItem } from "../types";
 import type { LineItem } from "../types";
 
 interface Props {
   items: LineItem[];
   onChange: (next: LineItem[]) => void;
+  advanceAmount: string;
 }
 
-export default function LineItemsSection({ items, onChange }: Props) {
+export default function LineItemsSection({ items, onChange, advanceAmount }: Props) {
   const updateItem = <K extends keyof LineItem>(id: string, key: K, value: LineItem[K]) =>
     onChange(items.map((it) => (it.id === id ? { ...it, [key]: value } : it)));
 
@@ -19,6 +20,9 @@ export default function LineItemsSection({ items, onChange }: Props) {
   };
 
   const total = calcTotal(items);
+  const advance = calcAdvance(advanceAmount);
+  const balanceDue = calcBalanceDue(total, advanceAmount);
+  const hasAdvance = advance > 0;
 
   return (
     <section className="card">
@@ -78,6 +82,18 @@ export default function LineItemsSection({ items, onChange }: Props) {
         <span>Total Amount</span>
         <strong>₹ {total.toFixed(0)}</strong>
       </div>
+      {hasAdvance && (
+        <>
+          <div className="live-total advance-live">
+            <span>Advance Paid</span>
+            <strong>&minus; ₹ {advance.toFixed(0)}</strong>
+          </div>
+          <div className="live-total balance-live">
+            <span>Balance Due</span>
+            <strong>₹ {balanceDue.toFixed(0)}</strong>
+          </div>
+        </>
+      )}
     </section>
   );
 }

@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { apiGet, apiPost } from "./api";
-import { calcLineAmount, calcTotal, emptyBillDetails, defaultLineItems } from "../types";
+import { calcAdvance, calcBalanceDue, calcLineAmount, calcTotal, emptyBillDetails, defaultLineItems } from "../types";
 import type { InvoiceData, BillDetails, LineItem } from "../types";
 
 export interface InvoiceApiRecord {
@@ -51,16 +51,21 @@ export async function exportRecordsToExcel(): Promise<void> {
     return;
   }
 
-  const invoiceRows = records.map((r) => ({
-    "Invoice No.": r.invoiceNumber || "",
-    Date: formatDateForSheet(r.bill?.date || ""),
-    "Bill To": r.bill?.billTo || "",
-    Address: r.bill?.address || "",
-    "Mobile No.": r.bill?.mobileNo || "",
-    "Item Count": (r.items || []).length,
-    "Total Amount (Rs.)": calcTotal(r.items || []).toFixed(0),
-    "Saved At": r.createdAt ? new Date(r.createdAt).toLocaleString("en-IN") : "",
-  }));
+  const invoiceRows = records.map((r) => {
+    const total = calcTotal(r.items || []);
+    return {
+      "Invoice No.": r.invoiceNumber || "",
+      Date: formatDateForSheet(r.bill?.date || ""),
+      "Bill To": r.bill?.billTo || "",
+      Address: r.bill?.address || "",
+      "Mobile No.": r.bill?.mobileNo || "",
+      "Item Count": (r.items || []).length,
+      "Total Amount (Rs.)": total.toFixed(0),
+      "Advance Paid (Rs.)": calcAdvance(r.bill?.advanceAmount).toFixed(0),
+      "Balance Due (Rs.)": calcBalanceDue(total, r.bill?.advanceAmount).toFixed(0),
+      "Saved At": r.createdAt ? new Date(r.createdAt).toLocaleString("en-IN") : "",
+    };
+  });
 
   const lineItemRows: Record<string, string | number>[] = [];
   for (const r of records) {
@@ -80,7 +85,7 @@ export async function exportRecordsToExcel(): Promise<void> {
 
   const invoiceSheet = XLSX.utils.json_to_sheet(invoiceRows);
   invoiceSheet["!cols"] = [
-    { wch: 14 }, { wch: 12 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 11 }, { wch: 16 }, { wch: 20 },
+    { wch: 14 }, { wch: 12 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 11 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 20 },
   ];
 
   const itemsSheet = XLSX.utils.json_to_sheet(lineItemRows);

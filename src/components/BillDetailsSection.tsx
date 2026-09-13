@@ -40,6 +40,18 @@ export default function BillDetailsSection({ bill, onChange }: Props) {
           <label htmlFor="mobileNo">Mobile No.</label>
           <input id="mobileNo" value={bill.mobileNo} onChange={(e) => set("mobileNo", e.target.value)} placeholder="10-digit mobile number" />
         </div>
+        <div className="field">
+          <label htmlFor="advanceAmount">Advance Paid (₹) &mdash; optional</label>
+          <input
+            id="advanceAmount"
+            type="number"
+            step="0.01"
+            inputMode="decimal"
+            value={bill.advanceAmount}
+            onChange={(e) => set("advanceAmount", e.target.value)}
+            placeholder="Leave blank if no advance was paid"
+          />
+        </div>
       </div>
     </section>
   );

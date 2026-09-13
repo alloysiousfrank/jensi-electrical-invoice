@@ -230,6 +230,16 @@ textarea {
   font-size: 1.2rem;
 }
 
+.advance-live {
+  margin-top: 8px;
+  background: #a13d3d;
+}
+
+.balance-live {
+  margin-top: 8px;
+  background: #29713f;
+}
+
 /* --- Preview toolbar --- */
 .preview {
   padding: 0;
@@ -584,6 +594,38 @@ textarea {
   padding: 12px;
   font-weight: 700;
   font-size: 1rem;
+}
+
+.advance-bar .total-label,
+.balance-bar .total-label {
+  padding: 9px 12px;
+  font-size: 0.85rem;
+}
+
+.advance-bar .total-value,
+.balance-bar .total-value {
+  padding: 9px 12px;
+  font-size: 0.85rem;
+}
+
+.advance-bar {
+  border-top: none;
+}
+
+.advance-bar .total-label {
+  color: #a13d3d;
+}
+
+.advance-bar .total-value {
+  background: #a13d3d;
+}
+
+.balance-bar .total-label {
+  color: #29713f;
+}
+
+.balance-bar .total-value {
+  background: #29713f;
 }
 
 .amount-words {

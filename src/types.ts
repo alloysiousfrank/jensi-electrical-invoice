@@ -12,6 +12,8 @@ export interface BillDetails {
   billNo: string;
   date: string;
   mobileNo: string;
+  /** Optional — left blank when no advance was paid. */
+  advanceAmount: string;
 }
 
 export const emptyBillDetails: BillDetails = {
@@ -20,6 +22,7 @@ export const emptyBillDetails: BillDetails = {
   billNo: "",
   date: new Date().toISOString().slice(0, 10),
   mobileNo: "",
+  advanceAmount: "",
 };
 
 let idCounter = 0;
@@ -44,6 +47,20 @@ export function calcLineAmount(item: LineItem): number {
 
 export function calcTotal(items: LineItem[] | undefined | null): number {
   return (items || []).reduce((sum, item) => sum + calcLineAmount(item), 0);
+}
+
+/** Advance paid by the customer up-front, if any. Defaults to 0 when left blank. */
+export function calcAdvance(advanceAmount: string | undefined | null): number {
+  return parseFloat(advanceAmount || "0") || 0;
+}
+
+/**
+ * Balance Due = Total - Advance Paid, floored at 0 so an accidental
+ * overpayment entry never shows a negative amount owed.
+ */
+export function calcBalanceDue(total: number, advanceAmount: string | undefined | null): number {
+  const balance = total - calcAdvance(advanceAmount);
+  return balance > 0 ? balance : 0;
 }
 
 const ONES = [

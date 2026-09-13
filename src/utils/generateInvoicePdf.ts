@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { LOGO_BASE64 } from "../assets/logo";
 import { SIGNATURE_BASE64 } from "../assets/signature";
-import { amountInWords, calcLineAmount, calcTotal } from "../types";
+import { amountInWords, calcAdvance, calcBalanceDue, calcLineAmount, calcTotal } from "../types";
 import type { InvoiceData } from "../types";
 import { generateUpiQrDataUrl } from "./qrCode";
 import {
@@ -162,6 +162,11 @@ export async function buildInvoicePdf(data: InvoiceData): Promise<jsPDF> {
 
   // --- Total bar ---
   const total = calcTotal(items);
+  const advance = calcAdvance(bill.advanceAmount);
+  const balanceDue = calcBalanceDue(total, bill.advanceAmount);
+  const hasAdvance = advance > 0;
+  const payable = hasAdvance ? balanceDue : total;
+
   const totalBarHeight = 28;
   const amountColWidth = 100;
   doc.setDrawColor(...LINE);
@@ -179,7 +184,42 @@ export async function buildInvoicePdf(data: InvoiceData): Promise<jsPDF> {
   doc.text(`Rs. ${total.toLocaleString("en-IN")}`, pageWidth - margin - amountColWidth / 2, y + totalBarHeight / 2 + 4, {
     align: "center",
   });
-  y += totalBarHeight + 14;
+  y += totalBarHeight;
+
+  // --- Advance Paid / Balance Due — only shown when an advance was actually recorded. ---
+  // Kept compact so adding them never pushes the fixed-position signature
+  // block into overlapping territory; the overflow guard further below
+  // still catches the rare case where it doesn't fit anyway.
+  if (hasAdvance) {
+    const smallBarHeight = 22;
+    const balanceBarHeight = 26;
+    const ADVANCE_RED: [number, number, number] = [161, 61, 61];
+    const BALANCE_GREEN: [number, number, number] = [41, 113, 63];
+
+    doc.setFillColor(...ADVANCE_RED);
+    doc.rect(margin, y, pageWidth - margin * 2, smallBarHeight, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...WHITE);
+    doc.text("ADVANCE PAID", margin + 14, y + smallBarHeight / 2 + 3.5);
+    doc.text("- Rs. " + advance.toLocaleString("en-IN"), pageWidth - margin - 14, y + smallBarHeight / 2 + 3.5, {
+      align: "right",
+    });
+    y += smallBarHeight;
+
+    doc.setFillColor(...BALANCE_GREEN);
+    doc.rect(margin, y, pageWidth - margin * 2, balanceBarHeight, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...WHITE);
+    doc.text("BALANCE DUE", margin + 14, y + balanceBarHeight / 2 + 4);
+    doc.text("Rs. " + balanceDue.toLocaleString("en-IN"), pageWidth - margin - 14, y + balanceBarHeight / 2 + 4, {
+      align: "right",
+    });
+    y += balanceBarHeight;
+  }
+
+  y += 14;
 
   // --- Amount in words ---
   doc.setFont("helvetica", "bold");
@@ -220,14 +260,14 @@ export async function buildInvoicePdf(data: InvoiceData): Promise<jsPDF> {
 
   const qrTop = bottomY - bottomBlockHeight;
   try {
-    const qrDataUrl = await generateUpiQrDataUrl(total.toFixed(0), `${BUSINESS_NAME} - ${bill.billTo || "Bill"}`);
+    const qrDataUrl = await generateUpiQrDataUrl(payable.toFixed(0), `${BUSINESS_NAME} - ${bill.billTo || "Bill"}`);
     doc.setDrawColor(...LINE);
     doc.roundedRect(margin, qrTop, qrSize + 12, qrSize + 12, 4, 4);
     doc.addImage(qrDataUrl, "PNG", margin + 6, qrTop + 6, qrSize, qrSize);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...INK);
-    doc.text(`Scan to Pay (UPI) - Rs. ${total.toLocaleString("en-IN")}`, margin + qrSize + 26, qrTop + 34);
+    doc.text(`Scan to Pay (UPI) - Rs. ${payable.toLocaleString("en-IN")}`, margin + qrSize + 26, qrTop + 34);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...SLATE);

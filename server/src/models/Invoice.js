@@ -17,6 +17,7 @@ const InvoiceSchema = new mongoose.Schema(
       address: { type: String, default: "" },
       date: { type: String, default: "" },
       mobileNo: { type: String, default: "" },
+      advanceAmount: { type: String, default: "" },
     },
     items: { type: [LineItemSchema], default: [] },
   },

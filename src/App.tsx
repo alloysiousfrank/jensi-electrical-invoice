@@ -83,7 +83,7 @@ function InvoiceApp() {
       <main className="app-main">
         <div className="form-column">
           <BillDetailsSection bill={bill} onChange={setBill} />
-          <LineItemsSection items={items} onChange={setItems} />
+          <LineItemsSection items={items} onChange={setItems} advanceAmount={bill.advanceAmount} />
 
           <button type="button" className="btn btn-generate" disabled={!canGenerate} onClick={handleGenerate}>
             {generating ? "Generating…" : "Generate Invoice"}
