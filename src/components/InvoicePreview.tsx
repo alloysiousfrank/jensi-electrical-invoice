@@ -169,6 +169,9 @@ export default function InvoicePreview({ data }: Props) {
             </div>
 
             <div className="signature-row">
+              <div className="sig-line-customer">
+                <span>Customer&apos;s Signature</span>
+              </div>
               <div className="sig-line-authorised">
                 <img src={SIGNATURE_BASE64} alt="Authorised signatory signature" className="sig-image" />
                 <span>{SIGNATORY_LINE}</span>

@@ -788,8 +788,21 @@ textarea {
 
 .signature-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
   margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.sig-line-customer {
+  width: 200px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .sig-line-authorised {

@@ -293,6 +293,15 @@ export async function buildInvoicePdf(data: InvoiceData): Promise<jsPDF> {
   doc.setTextColor(...INK);
   doc.text(SIGNATORY_LINE, rightSigX, bottomY + 16);
 
+  // Customer's Signature — a blank line on the left, same fixed baseline
+  // as the authorised signatory's line on the right.
+  doc.setDrawColor(...LINE);
+  doc.line(margin, bottomY, margin + sigLineWidth, bottomY);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...INK);
+  doc.text("Customer's Signature", margin, bottomY + 16);
+
   return doc;
 }
 
